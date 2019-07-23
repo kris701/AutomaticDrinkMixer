@@ -4,11 +4,6 @@
 // 2019
 // Look at Settings.h to configure!
 
-const uint8_t MaxRecipeListItem PROGMEM = (sizeof(RecipeList) / sizeof(RecipeList[0])) - 1;
-const uint8_t MaxCategorieItem PROGMEM = (sizeof(Categories) / sizeof(Categories[0])) - 1;
-const uint8_t MaxGlassSizesItem PROGMEM = (sizeof(GlassSizes) / sizeof(GlassSizes[0])) - 1;
-const uint8_t TankCount PROGMEM = (sizeof(BottleContents) / sizeof(BottleContents[0])) - 1;
-
 void setup() {
 	pinMode(LeftButton, INPUT);
 	pinMode(LeftButtonLight, OUTPUT);
@@ -17,12 +12,12 @@ void setup() {
 	pinMode(RightButton, INPUT);
 	pinMode(RightButtonLight, OUTPUT);
 
-	for (int i = 0; i < TankCount; i++)
+	for (TINT i = 0; i < TINT_ReadPROGMEM(&TankCount); i++)
 	{
 		pinMode(uint8_t_ReadPROGMEM(&PumpPin[i]), OUTPUT);
 	}
 
-	for (int i = 0; i < 3; i++)
+	for (uint8_t i = 0; i < 3; i++)
 	{
 		ButtonFadeBlink(2, true);
 	}
@@ -36,13 +31,13 @@ void setup() {
 	LCD_ClearScreen(MainLCD);
 
 	uint16_t TotalPossible = 0;
-	for (int i = 0; i < uint8_t_ReadPROGMEM(&MaxCategorieItem) + 1; i++)
+	for (RINT i = 0; i < CINT_ReadPROGMEM(&MaxCategorieItem) + 1; i++)
 	{
 		TotalPossible += GetCountOfPossibleInCategory(i, 0);
 	}
 
 	LCD_PrintTextWithinBounds(MainLCD, C_MAINBLUE, C_BLACK, ATotalOfString, RECT(0, 0, LCDWidth, 100), 5);
-	LCD_PrintTextWithinBounds(MainLCD, C_MAINBLUE, C_BLACK, (String)TotalPossible + F(" / ") + (String)(uint8_t_ReadPROGMEM(&MaxRecipeListItem) + 1), RECT(0, 100, LCDWidth, 200), 5);
+	LCD_PrintTextWithinBounds(MainLCD, C_MAINBLUE, C_BLACK, INT_STRING_INT_ToString(TotalPossible, F("/") , (RINT_ReadPROGMEM(&MaxRecipeListItem) + 1)), RECT(0, 100, LCDWidth, 200), 5);
 	LCD_PrintTextWithinBounds(MainLCD, C_MAINBLUE, C_BLACK, RecipiesPossibleString, RECT(0, 200, LCDWidth, 250), 5);
 	LCD_PrintTextWithinBounds(MainLCD, C_MAINBLUE, C_BLACK, PressAnyButtonToContinueString, RECT(0, 250, LCDWidth, LCDHeight), 5);
 
@@ -61,19 +56,19 @@ void Run(LCDWIKI_KBV _MainLCD)
 	bool RightButtonDownInner = true;
 
 	uint8_t SelectedCategoryIndex = 0;
-	uint8_t SelectedDrinkIndex = 0;
+	RINT SelectedDrinkIndex = 0;
 	uint8_t SelectedDrinkSizeIndex = 0;
 	uint8_t MenuState = 0;
 	bool MenuState1Overwrite = false;
 	bool MenuState2Overwrite = false;
 	bool MenuState3Overwrite = false;
 	bool MenuState4Overwrite = false;
-	uint8_t SelectedTankFill = 0;
-	long FillTimeStart = 0;
-	long FillTime = 0;
-	long FillTimeProgressbarTimer = 0;
+	TINT SelectedTankFill = 0;
+	unsigned long FillTimeStart = 0;
+	unsigned long FillTime = 0;
+	unsigned long FillTimeProgressbarTimer = 0;
 	bool StartFill = false;
-	uint8_t TankUsedCount = 0;
+	TINT TankUsedCount = 0;
 	bool StopFillLoop = false;
 
 	while (true)
@@ -158,10 +153,10 @@ void Run(LCDWIKI_KBV _MainLCD)
 			if (MenuState1Overwrite)
 			{
 				MenuState1Overwrite = false;
-				SelectedCategoryIndex = FindNextIndexRanges(SelectedCategoryIndex, uint8_t_ReadPROGMEM(&MaxCategorieItem));
-				while (!AnyOfCategoryPossible(SelectedCategoryIndex))
+				SelectedCategoryIndex = NextIndex(SelectedCategoryIndex, CINT_ReadPROGMEM(&MaxCategorieItem));
+				while (!IsAnyInCategory(SelectedCategoryIndex))
 				{
-					SelectedCategoryIndex = FindNextIndexRanges(SelectedCategoryIndex, uint8_t_ReadPROGMEM(&MaxCategorieItem));
+					SelectedCategoryIndex = NextIndex(SelectedCategoryIndex, CINT_ReadPROGMEM(&MaxCategorieItem));
 				}
 			}
 
@@ -172,57 +167,57 @@ void Run(LCDWIKI_KBV _MainLCD)
 
 				DrawBaseMenu(_MainLCD, GetCategoryElement(&Categories[SelectedCategoryIndex]).CategoryName, true, false, true);
 
-				MixRecipe MomentItem = GetOneRecipeListElement(SelectedDrinkIndex);;
+				MixRecipe MomentItem = GetRecipeElement(SelectedDrinkIndex);;
 				while (SelectedCategoryIndex != MomentItem.Category.Index)
 				{
-					SelectedDrinkIndex = FindNextIndexRanges(SelectedDrinkIndex, uint8_t_ReadPROGMEM(&MaxRecipeListItem));
-					MomentItem = GetOneRecipeListElement(SelectedDrinkIndex);;
+					SelectedDrinkIndex = NextIndex(SelectedDrinkIndex, RINT_ReadPROGMEM(&MaxRecipeListItem));
+					MomentItem = GetRecipeElement(SelectedDrinkIndex);;
 				}
 			}
 			else
 			{
 				if (LeftButtonDown)
 				{
-					SelectedCategoryIndex = FindNextIndexRanges(SelectedCategoryIndex, uint8_t_ReadPROGMEM(&MaxCategorieItem));
-					while (!AnyOfCategoryPossible(SelectedCategoryIndex))
+					SelectedCategoryIndex = NextIndex(SelectedCategoryIndex, CINT_ReadPROGMEM(&MaxCategorieItem));
+					while (!IsAnyInCategory(SelectedCategoryIndex))
 					{
-						SelectedCategoryIndex = FindNextIndexRanges(SelectedCategoryIndex, uint8_t_ReadPROGMEM(&MaxCategorieItem));
+						SelectedCategoryIndex = NextIndex(SelectedCategoryIndex, CINT_ReadPROGMEM(&MaxCategorieItem));
 					}
 				}
-
-				if (RightButtonDown)
+				else
 				{
-					SelectedCategoryIndex = FindPreviousIndexRanges(SelectedCategoryIndex, uint8_t_ReadPROGMEM(&MaxCategorieItem));
-					while (!AnyOfCategoryPossible(SelectedCategoryIndex))
+					if (RightButtonDown)
 					{
-						SelectedCategoryIndex = FindPreviousIndexRanges(SelectedCategoryIndex, uint8_t_ReadPROGMEM(&MaxCategorieItem));
+						SelectedCategoryIndex = PreviousIndex(SelectedCategoryIndex, CINT_ReadPROGMEM(&MaxCategorieItem));
+						while (!IsAnyInCategory(SelectedCategoryIndex))
+						{
+							SelectedCategoryIndex = PreviousIndex(SelectedCategoryIndex, CINT_ReadPROGMEM(&MaxCategorieItem));
+						}
 					}
 				}
 
 				int MomentSelectedCategoryIndex = SelectedCategoryIndex;
-				for (int i = 0; i < uint8_t_ReadPROGMEM(&MaxCategorieItem) / 2; i++)
+				for (CINT i = 0; i < CINT_ReadPROGMEM(&MaxCategorieItem) / 2; i++)
 				{
-					MomentSelectedCategoryIndex = FindPreviousIndexRanges(MomentSelectedCategoryIndex, uint8_t_ReadPROGMEM(&MaxCategorieItem));
-					while (!AnyOfCategoryPossible(MomentSelectedCategoryIndex))
+					MomentSelectedCategoryIndex = PreviousIndex(MomentSelectedCategoryIndex, CINT_ReadPROGMEM(&MaxCategorieItem));
+					while (!IsAnyInCategory(MomentSelectedCategoryIndex))
 					{
-						MomentSelectedCategoryIndex = FindPreviousIndexRanges(MomentSelectedCategoryIndex, uint8_t_ReadPROGMEM(&MaxCategorieItem));
+						MomentSelectedCategoryIndex = PreviousIndex(MomentSelectedCategoryIndex, CINT_ReadPROGMEM(&MaxCategorieItem));
 					}
-					String MomentCategoryName = GetCategoryElement(&Categories[MomentSelectedCategoryIndex]).CategoryName;
-					LCD_PrintTextWithinBounds(_MainLCD, C_SECOBLUE, C_BLACK, MomentCategoryName, RECT(0, 150 + (20 * i), LCDWidth / 2, 150 + (20 * i) + 20), 2);
+					LCD_PrintTextWithinBounds(_MainLCD, C_SECOBLUE, C_BLACK, GetCategoryElement(&Categories[MomentSelectedCategoryIndex]).CategoryName, RECT(0, 150 + (20 * i), LCDWidth / 2, 150 + (20 * i) + 20), 2);
 				}
 
 				LCD_PrintTextWithinBounds(_MainLCD, C_MAINBLUE, C_BLACK, GetCategoryElement(&Categories[SelectedCategoryIndex]).CategoryName, RECT(0, 100, LCDWidth, 150), 5);
 
 				MomentSelectedCategoryIndex = SelectedCategoryIndex;
-				for (int i = 0; i < uint8_t_ReadPROGMEM(&MaxCategorieItem) / 2; i++)
+				for (CINT i = 0; i < CINT_ReadPROGMEM(&MaxCategorieItem) / 2; i++)
 				{
-					MomentSelectedCategoryIndex = FindNextIndexRanges(MomentSelectedCategoryIndex, uint8_t_ReadPROGMEM(&MaxCategorieItem));
-					while (!AnyOfCategoryPossible(MomentSelectedCategoryIndex))
+					MomentSelectedCategoryIndex = NextIndex(MomentSelectedCategoryIndex, CINT_ReadPROGMEM(&MaxCategorieItem));
+					while (!IsAnyInCategory(MomentSelectedCategoryIndex))
 					{
-						MomentSelectedCategoryIndex = FindNextIndexRanges(MomentSelectedCategoryIndex, uint8_t_ReadPROGMEM(&MaxCategorieItem));
+						MomentSelectedCategoryIndex = NextIndex(MomentSelectedCategoryIndex, CINT_ReadPROGMEM(&MaxCategorieItem));
 					}
-					String MomentCategoryName = GetCategoryElement(&Categories[MomentSelectedCategoryIndex]).CategoryName;
-					LCD_PrintTextWithinBounds(_MainLCD, C_SECOBLUE, C_BLACK, MomentCategoryName, RECT(LCDWidth / 2, 150 + (20 * i), LCDWidth, 150 + (20 * i) + 20), 2);
+					LCD_PrintTextWithinBounds(_MainLCD, C_SECOBLUE, C_BLACK, GetCategoryElement(&Categories[MomentSelectedCategoryIndex]).CategoryName, RECT(LCDWidth / 2, 150 + (20 * i), LCDWidth, 150 + (20 * i) + 20), 2);
 				}
 			}
 
@@ -239,7 +234,7 @@ void Run(LCDWIKI_KBV _MainLCD)
 		{
 			if (MenuState2Overwrite)
 			{
-				SelectedDrinkIndex = FindNextIndexRangesCategory(SelectedDrinkIndex, uint8_t_ReadPROGMEM(&MaxRecipeListItem), SelectedCategoryIndex);
+				SelectedDrinkIndex = NextIndexCategory(SelectedDrinkIndex, RINT_ReadPROGMEM(&MaxRecipeListItem), SelectedCategoryIndex);
 				MenuState2Overwrite = false;
 			}
 
@@ -263,31 +258,30 @@ void Run(LCDWIKI_KBV _MainLCD)
 
 					if (LeftButtonDown)
 					{
-						SelectedDrinkIndex = FindNextIndexRangesCategory(SelectedDrinkIndex, uint8_t_ReadPROGMEM(&MaxRecipeListItem), SelectedCategoryIndex);
+						SelectedDrinkIndex = NextIndexCategory(SelectedDrinkIndex, RINT_ReadPROGMEM(&MaxRecipeListItem), SelectedCategoryIndex);
 					}
-
-					if (RightButtonDown)
+					else
 					{
-						SelectedDrinkIndex = FindPreviousIndexRangesCategory(SelectedDrinkIndex, uint8_t_ReadPROGMEM(&MaxRecipeListItem), SelectedCategoryIndex);
+						if (RightButtonDown)
+						{
+							SelectedDrinkIndex = PreviousIndexCategory(SelectedDrinkIndex, RINT_ReadPROGMEM(&MaxRecipeListItem), SelectedCategoryIndex);
+						}
 					}
 
-					int MomentSelectedDrinkIndex = SelectedDrinkIndex;
-					for (int i = 0; i < GetCountOfPossibleInCategory(SelectedCategoryIndex) / 2; i++)
+					RINT MomentSelectedDrinkIndex = SelectedDrinkIndex;
+					for (CINT i = 0; i < GetCountOfPossibleInCategory(SelectedCategoryIndex) / 2; i++)
 					{
-						MomentSelectedDrinkIndex = FindPreviousIndexRangesCategory(MomentSelectedDrinkIndex, uint8_t_ReadPROGMEM(&MaxRecipeListItem), SelectedCategoryIndex);
-						MixRecipe MomentSideItemLeft = GetOneRecipeListElement(MomentSelectedDrinkIndex);
-						LCD_PrintTextWithinBounds(_MainLCD, C_SECOBLUE, C_BLACK, MomentSideItemLeft.Name, RECT(0, 150 + (20 * i), LCDWidth / 2, 150 + (20 * i) + 20), 2);
+						MomentSelectedDrinkIndex = PreviousIndexCategory(MomentSelectedDrinkIndex, RINT_ReadPROGMEM(&MaxRecipeListItem), SelectedCategoryIndex);
+						LCD_PrintTextWithinBounds(_MainLCD, C_SECOBLUE, C_BLACK, GetRecipeElement(MomentSelectedDrinkIndex).Name, RECT(0, 150 + (20 * i), LCDWidth / 2, 150 + (20 * i) + 20), 2);
 					}
 
-					MixRecipe MomentItem = GetOneRecipeListElement(SelectedDrinkIndex);
-					LCD_PrintTextWithinBounds(_MainLCD, C_MAINBLUE, C_BLACK, MomentItem.Name, RECT(0, 100, LCDWidth, 150), 5);
+					LCD_PrintTextWithinBounds(_MainLCD, C_MAINBLUE, C_BLACK, GetRecipeElement(SelectedDrinkIndex).Name, RECT(0, 100, LCDWidth, 150), 5);
 
 					MomentSelectedDrinkIndex = SelectedDrinkIndex;
-					for (int i = 0; i < GetCountOfPossibleInCategory(SelectedCategoryIndex) / 2; i++)
+					for (CINT i = 0; i < GetCountOfPossibleInCategory(SelectedCategoryIndex) / 2; i++)
 					{
-						MomentSelectedDrinkIndex = FindNextIndexRangesCategory(MomentSelectedDrinkIndex, uint8_t_ReadPROGMEM(&MaxRecipeListItem), SelectedCategoryIndex);
-						MixRecipe MomentSideItemRight = GetOneRecipeListElement(MomentSelectedDrinkIndex);
-						LCD_PrintTextWithinBounds(_MainLCD, C_SECOBLUE, C_BLACK, MomentSideItemRight.Name, RECT(LCDWidth / 2, 150 + (20 * i), LCDWidth, 150 + (20 * i) + 20), 2);
+						MomentSelectedDrinkIndex = NextIndexCategory(MomentSelectedDrinkIndex, RINT_ReadPROGMEM(&MaxRecipeListItem), SelectedCategoryIndex);
+						LCD_PrintTextWithinBounds(_MainLCD, C_SECOBLUE, C_BLACK, GetRecipeElement(MomentSelectedDrinkIndex).Name, RECT(LCDWidth / 2, 150 + (20 * i), LCDWidth, 150 + (20 * i) + 20), 2);
 					}
 				}
 			}
@@ -307,7 +301,7 @@ void Run(LCDWIKI_KBV _MainLCD)
 			{
 				LCD_ClearScreen(_MainLCD);
 
-				MixRecipe MomentItem = GetOneRecipeListElement(SelectedDrinkIndex);
+				MixRecipe MomentItem = GetRecipeElement(SelectedDrinkIndex);
 				LCD_PrintTextWithinBounds(_MainLCD, C_SECOBLUE, C_BLACK, MomentItem.Name, RECT(0, 0, LCDWidth, 60),5);
 
 				LCD_DrawRoundRectangle(_MainLCD, C_MAINGRAY, C_SECOGRAY, RECT(10, 60, 310, 310), 5);
@@ -316,23 +310,21 @@ void Run(LCDWIKI_KBV _MainLCD)
 
 				int YVal = 150;
 
-				for (int j = 0; j < TankCount; j++)
+				for (RINT j = 0; j < MomentItem.TankUsageCount; j++)
 				{
-					if (MomentItem.Liquids[j].SelectedLiquidPart > 0)
+					String NameOfLiquid;
+					for (TINT i = 0; i < TINT_ReadPROGMEM(&TankCount); i++)
 					{
-						String NameOfLiquid;
-						for (int i = 0; i < 6; i++)
+						if (MomentItem.Liquids[j].SelectedLiquid.ID == GetLiquidElement(&BottleContents[i]).ID)
 						{
-							if ((String)MomentItem.Liquids[j].SelectedLiquid.TankContenName == GetLiquidElement(&BottleContents[i]).TankContenName)
-							{
-								NameOfLiquid = GetLiquidElement(&BottleContents[i]).TankContenName;
-							}
+							NameOfLiquid = GetLiquidElement(&BottleContents[i]).TankContenName;
+							break;
 						}
-						LCD_PrintText(_MainLCD, C_WHITE, C_SECOGRAY, 2, NameOfLiquid, 20, YVal);
-						LCD_PrintText(_MainLCD, C_WHITE, C_SECOGRAY, 2, (String)MomentItem.Liquids[j].SelectedLiquidPart + F("%"), 140, YVal, RECT(140, YVal, 245, YVal + 20), C_SECOGRAY);
-
-						YVal += 20;
 					}
+					LCD_PrintText(_MainLCD, C_WHITE, C_SECOGRAY, 2, NameOfLiquid, 20, YVal);
+					LCD_PrintText(_MainLCD, C_WHITE, C_SECOGRAY, 2, INT_STRING_ToString(MomentItem.Liquids[j].SelectedLiquidPart, F("%")), 140, YVal, RECT(140, YVal, 245, YVal + 20), C_SECOGRAY);
+
+					YVal += 20;
 				}
 
 				RefeshGlassSizeValues(_MainLCD, MomentItem, 150, SelectedDrinkSizeIndex);
@@ -358,18 +350,16 @@ void Run(LCDWIKI_KBV _MainLCD)
 				{
 					if (LeftButtonDown)
 					{
-						SelectedDrinkSizeIndex = FindNextIndexRanges(SelectedDrinkSizeIndex, uint8_t_ReadPROGMEM(&MaxGlassSizesItem));
+						SelectedDrinkSizeIndex = NextIndex(SelectedDrinkSizeIndex, GINT_ReadPROGMEM(&MaxGlassSizesItem));
 
-						MixRecipe MomentItem = GetOneRecipeListElement(SelectedDrinkIndex);
-						RefeshGlassSizeValues(_MainLCD, MomentItem, 150, SelectedDrinkSizeIndex);
+						RefeshGlassSizeValues(_MainLCD, GetRecipeElement(SelectedDrinkIndex), 150, SelectedDrinkSizeIndex);
 					}
 
 					if (RightButtonDown)
 					{
-						SelectedDrinkSizeIndex = FindPreviousIndexRanges(SelectedDrinkSizeIndex, uint8_t_ReadPROGMEM(&MaxGlassSizesItem));
+						SelectedDrinkSizeIndex = PreviousIndex(SelectedDrinkSizeIndex, GINT_ReadPROGMEM(&MaxGlassSizesItem));
 
-						MixRecipe MomentItem = GetOneRecipeListElement(SelectedDrinkIndex);
-						RefeshGlassSizeValues(_MainLCD, MomentItem, 150, SelectedDrinkSizeIndex);
+						RefeshGlassSizeValues(_MainLCD, GetRecipeElement(SelectedDrinkIndex), 150, SelectedDrinkSizeIndex);
 					}
 				}
 			}
@@ -414,17 +404,17 @@ void Run(LCDWIKI_KBV _MainLCD)
 			}
 			else
 			{
-				MixRecipe MomentItem = GetOneRecipeListElement(SelectedDrinkIndex);
+				MixRecipe MomentItem = GetRecipeElement(SelectedDrinkIndex);
 
 				if (!StartFill)
 				{
 					if (MomentItem.RunAtSameTime)
 					{
-						for (int j = 0; j < MomentItem.TankUsageCount; j++)
+						for (TINT j = 0; j < MomentItem.TankUsageCount; j++)
 						{
-							for (int i = 0; i < TankCount; i++)
+							for (TINT i = 0; i < TINT_ReadPROGMEM(&TankCount); i++)
 							{
-								if ((String)MomentItem.Liquids[j].SelectedLiquid.TankContenName == GetLiquidElement(&BottleContents[i]).TankContenName)
+								if (MomentItem.Liquids[j].SelectedLiquid.ID == GetLiquidElement(&BottleContents[i]).ID)
 								{
 									FillTimeStart = millis();
 									StartFill = true;
@@ -440,23 +430,20 @@ void Run(LCDWIKI_KBV _MainLCD)
 					}
 					else
 					{
-						if (MomentItem.Liquids[SelectedTankFill].SelectedLiquidPart > 0)
+						for (TINT i = 0; i < TINT_ReadPROGMEM(&TankCount); i++)
 						{
-							for (int i = 0; i < TankCount; i++)
+							if (MomentItem.Liquids[SelectedTankFill].SelectedLiquid.ID == GetLiquidElement(&BottleContents[i]).ID)
 							{
-								if ((String)MomentItem.Liquids[SelectedTankFill].SelectedLiquid.TankContenName == GetLiquidElement(&BottleContents[i]).TankContenName)
-								{
-									FillTimeStart = millis();
-									StartFill = true;
-									digitalWrite(uint8_t_ReadPROGMEM(&PumpPin[i]), 1);
-								}
+								FillTimeStart = millis();
+								StartFill = true;
+								digitalWrite(uint8_t_ReadPROGMEM(&PumpPin[i]), 1);
 							}
 						}
 
 						if (!StartFill)
 						{
 							SelectedTankFill++;
-							if (SelectedTankFill > TankCount)
+							if (SelectedTankFill > TINT_ReadPROGMEM(&TankCount))
 							{
 								StopFillLoop = true;
 							}
@@ -475,11 +462,11 @@ void Run(LCDWIKI_KBV _MainLCD)
 
 						if (MomentItem.RunAtSameTime)
 						{
-							for (int j = 0; j < MomentItem.TankUsageCount; j++)
+							for (TINT j = 0; j < MomentItem.TankUsageCount; j++)
 							{
-								for (int i = 0; i < TankCount; i++)
+								for (TINT i = 0; i < TINT_ReadPROGMEM(&TankCount); i++)
 								{
-									if ((String)MomentItem.Liquids[j].SelectedLiquid.TankContenName == GetLiquidElement(&BottleContents[i]).TankContenName)
+									if (MomentItem.Liquids[j].SelectedLiquid.ID == GetLiquidElement(&BottleContents[i]).ID)
 									{
 										if (!(((FillTime - FillTimeStart) / 100) * (((double)uint16_t_ReadPROGMEM(&PumpCalibration[i]) / 600) * MomentItem.Liquids[j].SelectedLiquid.FizzleFactor) >= ((double)uint16_t_ReadPROGMEM(&GlassSizes[SelectedDrinkSizeIndex]) * ((double)MomentItem.Liquids[j].SelectedLiquidPart / 100))))
 										{
@@ -537,21 +524,18 @@ void Run(LCDWIKI_KBV _MainLCD)
 					if (MomentItem.RunAtSameTime)
 					{
 						bool AllDone = true;
-						for (int j = 0; j < MomentItem.TankUsageCount; j++)
+						for (TINT j = 0; j < MomentItem.TankUsageCount; j++)
 						{
-							if (MomentItem.Liquids[j].SelectedLiquidPart > 0)
+							for (TINT i = 0; i < TINT_ReadPROGMEM(&TankCount); i++)
 							{
-								for (int i = 0; i < TankCount; i++)
+								if (MomentItem.Liquids[j].SelectedLiquid.ID == GetLiquidElement(&BottleContents[i]).ID)
 								{
-									if ((String)MomentItem.Liquids[j].SelectedLiquid.TankContenName == GetLiquidElement(&BottleContents[i]).TankContenName)
+									if (((FillTime - FillTimeStart) / 100) * (((double)uint16_t_ReadPROGMEM(&PumpCalibration[i]) / 600) * MomentItem.Liquids[j].SelectedLiquid.FizzleFactor) >= ((double)uint16_t_ReadPROGMEM(&GlassSizes[SelectedDrinkSizeIndex]) * ((double)MomentItem.Liquids[j].SelectedLiquidPart / 100)))
 									{
-										if (((FillTime - FillTimeStart) / 100) * (((double)uint16_t_ReadPROGMEM(&PumpCalibration[i]) / 600) * MomentItem.Liquids[j].SelectedLiquid.FizzleFactor) >= ((double)uint16_t_ReadPROGMEM(&GlassSizes[SelectedDrinkSizeIndex]) * ((double)MomentItem.Liquids[j].SelectedLiquidPart / 100)))
-										{
-											digitalWrite(uint8_t_ReadPROGMEM(&PumpPin[i]), 0);
-										}
-										else
-											AllDone = false;
+										digitalWrite(uint8_t_ReadPROGMEM(&PumpPin[i]), 0);
 									}
+									else
+										AllDone = false;
 								}
 							}
 						}
@@ -570,7 +554,7 @@ void Run(LCDWIKI_KBV _MainLCD)
 							StopAllPumps();
 
 							SelectedTankFill++;
-							if (SelectedTankFill > TankCount)
+							if (SelectedTankFill > TINT_ReadPROGMEM(&TankCount))
 							{
 								StopFillLoop = true;
 							}
@@ -580,12 +564,11 @@ void Run(LCDWIKI_KBV _MainLCD)
 
 				if (StopFillLoop)
 				{
-					String MixingString = MixingFinishedString;
-					LCD_PrintTextWithinBounds(_MainLCD, C_WHITE, C_BLACK, MixingString, RECT(0, 0, LCDWidth, 200), 10);
+					LCD_PrintTextWithinBounds(_MainLCD, C_WHITE, C_BLACK, MixingFinishedString, RECT(0, 0, LCDWidth, 200), 10);
 
-					for (int i = 0; i < 3; i++)
+					for (uint8_t i = 0; i < 3; i++)
 					{
-						for (int i = 0; i < TankCount; i++)
+						for (TINT i = 0; i < TINT_ReadPROGMEM(&TankCount); i++)
 						{
 							analogWrite(uint8_t_ReadPROGMEM(&PumpPin[i]), 30);
 						}
@@ -617,7 +600,7 @@ void Run(LCDWIKI_KBV _MainLCD)
 
 void StopAllPumps()
 {
-	for (int i = 0; i < TankCount; i++)
+	for (TINT i = 0; i < TINT_ReadPROGMEM(&TankCount); i++)
 	{
 		digitalWrite(uint8_t_ReadPROGMEM(&PumpPin[i]), 0);
 	}
@@ -625,7 +608,7 @@ void StopAllPumps()
 
 void ButtonFadeBlink(int Delay, bool TurnOffAfter)
 {
-	for (int j = 0; j < 256; j++)
+	for (uint8_t j = 0; j < 255; j++)
 	{
 		analogWrite(LeftButtonLight, j);
 		analogWrite(MiddleButtonLight, j);
@@ -656,65 +639,60 @@ void DrawBaseMenu(LCDWIKI_KBV _MainLCD, String TopText, bool ChangeTopLabel = tr
 	if (ChangeBottomLabel)
 	{
 		LCD_DrawRectangle(_MainLCD, C_SECOGRAY, C_SECOGRAY, RECT(0, LCDHeight - 50, LCDWidth, LCDHeight));
-		String BottomString = LeftEnterRightString;
-		LCD_PrintTextWithinBounds(_MainLCD, C_WHITE, C_WHITE, BottomString, RECT(0, LCDHeight - 50, LCDWidth, LCDHeight), 10, C_SECOGRAY);
+		LCD_PrintTextWithinBounds(_MainLCD, C_WHITE, C_WHITE, LeftEnterRightString, RECT(0, LCDHeight - 50, LCDWidth, LCDHeight), 10, C_SECOGRAY);
 	}
 }
 
-void RefeshGlassSizeValues(LCDWIKI_KBV _MainLCD, MixRecipe MomentItem, int YVal, int _SelectedDrinkSizeIndex)
+void RefeshGlassSizeValues(LCDWIKI_KBV _MainLCD, MixRecipe MomentItem, int YVal, GINT _SelectedDrinkSizeIndex)
 {
 	LCD_DrawRoundRectangle(_MainLCD, C_MAINGRAY, C_SECOGRAY, RECT(320, 60, LCDWidth - 10, 225), 5);
 
 	int MomentSelectedDrinkSizeIndex = _SelectedDrinkSizeIndex;
-	for (int i = 0; i < 3; i++)
+	for (uint8_t i = 0; i < 3; i++)
 	{
-		MomentSelectedDrinkSizeIndex = FindPreviousIndexRanges(MomentSelectedDrinkSizeIndex, uint8_t_ReadPROGMEM(&MaxGlassSizesItem));
-		String MomentString = char_ReadPROGMEM(&GlassSizesName[MomentSelectedDrinkSizeIndex]);
-		LCD_PrintTextWithinBounds(_MainLCD, C_WHITE, C_SECOGRAY, MomentString, RECT(330, 95 - (15 * i), LCDWidth - 20, 95 - (15 * i) + 15), 2, C_SECOGRAY);
+		MomentSelectedDrinkSizeIndex = PreviousIndex(MomentSelectedDrinkSizeIndex, GINT_ReadPROGMEM(&MaxGlassSizesItem));
+		LCD_PrintTextWithinBounds(_MainLCD, C_WHITE, C_SECOGRAY, char_ReadPROGMEM(&GlassSizesName[MomentSelectedDrinkSizeIndex]), RECT(330, 95 - (15 * i), LCDWidth - 20, 95 - (15 * i) + 15), 2, C_SECOGRAY);
 	}
 
-	String MomentCenterString = char_ReadPROGMEM(&GlassSizesName[_SelectedDrinkSizeIndex]);
-	LCD_PrintTextWithinBounds(_MainLCD, C_WHITE, C_SECOGRAY, MomentCenterString, RECT(330, 110, LCDWidth - 20, 165), 5, C_SECOGRAY);
+	LCD_PrintTextWithinBounds(_MainLCD, C_WHITE, C_SECOGRAY, char_ReadPROGMEM(&GlassSizesName[_SelectedDrinkSizeIndex]), RECT(330, 110, LCDWidth - 20, 165), 5, C_SECOGRAY);
 
 	MomentSelectedDrinkSizeIndex = _SelectedDrinkSizeIndex;
-	for (int i = 0; i < 3; i++)
+	for (uint8_t i = 0; i < 3; i++)
 	{
-		MomentSelectedDrinkSizeIndex = FindNextIndexRanges(MomentSelectedDrinkSizeIndex, uint8_t_ReadPROGMEM(&MaxGlassSizesItem));
-		String MomentString = char_ReadPROGMEM(&GlassSizesName[MomentSelectedDrinkSizeIndex]);
-		LCD_PrintTextWithinBounds(_MainLCD, C_WHITE, C_SECOGRAY, MomentString, RECT(330, 165 + (15 * i), LCDWidth - 20, 165 + (15 * i) + 15), 2, C_SECOGRAY);
+		MomentSelectedDrinkSizeIndex = NextIndex(MomentSelectedDrinkSizeIndex, GINT_ReadPROGMEM(&MaxGlassSizesItem));
+		LCD_PrintTextWithinBounds(_MainLCD, C_WHITE, C_SECOGRAY, char_ReadPROGMEM(&GlassSizesName[MomentSelectedDrinkSizeIndex]), RECT(330, 165 + (15 * i), LCDWidth - 20, 165 + (15 * i) + 15), 2, C_SECOGRAY);
 	}
 
-	String SizeText = (String)uint16_t_ReadPROGMEM(&GlassSizes[_SelectedDrinkSizeIndex]) + " ml";
-	LCD_PrintTextWithinBounds(_MainLCD, C_WHITE, C_BLACK, SizeText, RECT(320, 225, LCDWidth, LCDHeight), 5);
+	LCD_PrintTextWithinBounds(_MainLCD, C_WHITE, C_BLACK, INT_STRING_ToString(uint16_t_ReadPROGMEM(&GlassSizes[_SelectedDrinkSizeIndex]), F("ml")), RECT(320, 225, LCDWidth, LCDHeight), 5);
 }
 
 #pragma endregion
 
 #pragma region General Call Region
 
-int CenterTextAtHorisontal(int At, int FontSize, String Text)
+uint16_t CenterTextAtHorisontal(uint16_t At, uint8_t FontSize, uint8_t TextLength)
 {
-	return At - (GetTextWidth(FontSize, Text) / 2);
+	return At - (GetTextWidth(FontSize, TextLength) / 2);
 }
 
-int CenterTextAtVertical(int At, int FontSize, String Text)
+uint16_t CenterTextAtVertical(uint16_t At, uint8_t FontSize, uint8_t TextLength)
 {
-	return At - (GetTextHeight(FontSize, Text) / 2);
+	return At - (GetTextHeight(FontSize) / 2);
 }
 
-int GetTextWidth(int FontSize, String Text)
+uint16_t GetTextWidth(uint8_t FontSize, uint8_t TextLength)
 {
-	return (Text.length() * FontWidth * FontSize);
+	return (TextLength * FontWidth * FontSize);
 }
 
-int GetTextHeight(int FontSize, String Text)
+uint8_t GetTextHeight(uint8_t FontSize)
 {
 	return FontHeight * FontSize;
 }
 
-uint8_t GetFontSizeFitWithinBounds(RECT Bounds, int Margin, String Text, uint8_t MaxFontSize, uint8_t MinFontSize = 1)
+uint8_t FitFontWithingBounds(RECT Bounds, uint8_t Margin, uint8_t TextLength, uint8_t MaxFontSize, uint8_t MinFontSize = 1)
 {
-	uint8_t MomentFontSize = (((Bounds.Width - Bounds.X) - Margin * 2) / FontWidth) / Text.length();
+	uint8_t MomentFontSize = (((Bounds.Width - Bounds.X) - Margin * 2) / FontWidth) / TextLength;
 	if (MomentFontSize > MaxFontSize)
 		MomentFontSize = MaxFontSize;
 	if (MomentFontSize < MinFontSize)
@@ -729,7 +707,7 @@ uint8_t GetFontSizeFitWithinBounds(RECT Bounds, int Margin, String Text, uint8_t
 	return MomentFontSize;
 }
 
-int FindNextIndexRanges(int Index, int MaxIndex)
+RINT NextIndex(RINT Index, RINT MaxIndex)
 {
 	Index++;
 	if (Index > MaxIndex)
@@ -737,7 +715,7 @@ int FindNextIndexRanges(int Index, int MaxIndex)
 	return Index;
 }
 
-int FindPreviousIndexRanges(int Index, int MaxIndex)
+RINT PreviousIndex(RINT Index, RINT MaxIndex)
 {
 	Index--;
 	if (Index < 0)
@@ -745,29 +723,29 @@ int FindPreviousIndexRanges(int Index, int MaxIndex)
 	return Index;
 }
 
-int FindNextIndexRangesCategory(int Index, int MaxIndex, int CategoryIndex)
+RINT NextIndexCategory(RINT Index, RINT MaxIndex, CINT CategoryIndex)
 {
-	Index = FindNextIndexRanges(Index, MaxIndex);
+	Index = NextIndex(Index, MaxIndex);
 
-	MixRecipe MomentItem = GetOneRecipeListElement(Index);
-	while (CategoryIndex != MomentItem.Category.Index || !AnyOfCategoryPossibleSingle(CategoryIndex, Index))
+	MixRecipe MomentItem = GetRecipeElement(Index);
+	while (CategoryIndex != MomentItem.Category.Index || !IsAnyInCategoryInner(CategoryIndex, Index))
 	{
-		Index = FindNextIndexRanges(Index, MaxIndex);
-		MomentItem = GetOneRecipeListElement(Index);
+		Index = NextIndex(Index, MaxIndex);
+		MomentItem = GetRecipeElement(Index);
 	}
 
 	return Index;
 }
 
-int FindPreviousIndexRangesCategory(int Index, int MaxIndex, int CategoryIndex)
+RINT PreviousIndexCategory(RINT Index, RINT MaxIndex, CINT CategoryIndex)
 {
-	Index = FindPreviousIndexRanges(Index, MaxIndex);
+	Index = PreviousIndex(Index, MaxIndex);
 
-	MixRecipe MomentItem = GetOneRecipeListElement(Index);
-	while (CategoryIndex != MomentItem.Category.Index || !AnyOfCategoryPossibleSingle(CategoryIndex, Index))
+	MixRecipe MomentItem = GetRecipeElement(Index);
+	while (CategoryIndex != MomentItem.Category.Index || !IsAnyInCategoryInner(CategoryIndex, Index))
 	{
-		Index = FindPreviousIndexRanges(Index, MaxIndex);
-		MomentItem = GetOneRecipeListElement(Index);
+		Index = PreviousIndex(Index, MaxIndex);
+		MomentItem = GetRecipeElement(Index);
 	}
 
 	return Index;
@@ -781,6 +759,42 @@ uint16_t uint16_t_ReadPROGMEM(const uint16_t* ptr)
 uint8_t uint8_t_ReadPROGMEM(const uint8_t* ptr)
 {
 	return (uint8_t)pgm_read_byte(ptr);
+}
+
+RINT RINT_ReadPROGMEM(const RINT* ptr)
+{
+	#if RINT_IS_16bit
+		return (RINT)pgm_read_word(ptr);
+	#else
+		return (RINT)pgm_read_byte(ptr);
+	#endif
+}
+
+TINT TINT_ReadPROGMEM(const TINT* ptr)
+{
+	#if TINT_IS_16bit
+		return (RINT)pgm_read_word(ptr);
+	#else
+		return (RINT)pgm_read_byte(ptr);
+	#endif
+}
+
+CINT CINT_ReadPROGMEM(const CINT* ptr)
+{
+	#if CINT_IS_16bit
+		return (CINT)pgm_read_word(ptr);
+	#else
+		return (CINT)pgm_read_byte(ptr);
+	#endif
+}
+
+GINT GINT_ReadPROGMEM(const GINT* ptr)
+{
+	#if GINT_IS_16bit
+		return (GINT)pgm_read_word(ptr);
+	#else
+		return (GINT)pgm_read_byte(ptr);
+	#endif
 }
 
 char* char_ReadPROGMEM(char* const* ptr)
@@ -802,34 +816,34 @@ CategoryItem GetCategoryElement(const CategoryItem* ptr)
 	return oneItem;
 }
 
-MixRecipe GetOneRecipeListElement(int Index)
+MixRecipe GetRecipeElement(RINT Index)
 {
 	MixRecipe oneItem;
 	memcpy_P(&oneItem, &RecipeList[Index], sizeof oneItem);
 	return oneItem;
 }
 
-bool AnyOfCategoryPossible(int CategoryIndex)
+bool IsAnyInCategory(CINT CategoryIndex)
 {
-	for (int i = 0; i < uint8_t_ReadPROGMEM(&MaxRecipeListItem) + 1; i++)
+	for (RINT i = 0; i < RINT_ReadPROGMEM(&MaxRecipeListItem) + 1; i++)
 	{
-		if (AnyOfCategoryPossibleSingle(CategoryIndex, i))
+		if (IsAnyInCategoryInner(CategoryIndex, i))
 			return true;
 	}
 	return false;
 }
 
-bool AnyOfCategoryPossibleSingle(int CategoryIndex, int Index)
+bool IsAnyInCategoryInner(CINT CategoryIndex, RINT Index)
 {
-	MixRecipe MomentItem = GetOneRecipeListElement(Index);
+	MixRecipe MomentItem = GetRecipeElement(Index);
 	if (MomentItem.Category.Index == CategoryIndex)
 	{
 		int IsThereCount = 0;
-		for (int l = 0; l < MomentItem.TankUsageCount; l++)
+		for (TINT l = 0; l < MomentItem.TankUsageCount; l++)
 		{
-			for (int j = 0; j < TankCount; j++)
+			for (TINT j = 0; j < TINT_ReadPROGMEM(&TankCount); j++)
 			{
-				if ((String)MomentItem.Liquids[l].SelectedLiquid.TankContenName == GetLiquidElement(&BottleContents[j]).TankContenName)
+				if (MomentItem.Liquids[l].SelectedLiquid.ID == GetLiquidElement(&BottleContents[j]).ID)
 				{
 					IsThereCount++;
 					break;
@@ -842,17 +856,34 @@ bool AnyOfCategoryPossibleSingle(int CategoryIndex, int Index)
 	return false;
 }
 
-int GetCountOfPossibleInCategory(int CategoryIndex, int Minimum = 3)
+RINT GetCountOfPossibleInCategory(CINT CategoryIndex, uint8_t Minimum = 3)
 {
 	int Count = 0;
-	for (int i = 0; i < uint8_t_ReadPROGMEM(&MaxRecipeListItem) + 1; i++)
+	for (RINT i = 0; i < RINT_ReadPROGMEM(&MaxRecipeListItem) + 1; i++)
 	{
-		if (AnyOfCategoryPossibleSingle(CategoryIndex, i))
+		if (IsAnyInCategoryInner(CategoryIndex, i))
 			Count++;
 	}
 	if (Count < Minimum)
 		Count = Minimum;
 	return Count;
+}
+
+String INT_STRING_INT_ToString(int Interget1, String MiddleString, int Interger2)
+{
+	String OutString;
+	OutString += Interget1;
+	OutString += MiddleString;
+	OutString += Interger2;
+	return OutString;
+}
+
+String INT_STRING_ToString(int Interget1, String MiddleString)
+{
+	String OutString;
+	OutString += Interget1;
+	OutString += MiddleString;
+	return OutString;
 }
 
 #pragma endregion
@@ -866,7 +897,8 @@ void LCD_ClearScreen(LCDWIKI_KBV _MainLCD, uint16_t WithColor = C_BLACK)
 
 void LCD_PrintText(LCDWIKI_KBV _MainLCD, uint16_t FrontColor, uint16_t BackColor, uint8_t TextSize, String InputText, uint16_t X = 0, uint16_t Y = 0, RECT OverwriteBox = {0,0,0,0}, uint16_t OverwriteColor = C_BLACK)
 {
-	LCD_DrawRectangle(_MainLCD, OverwriteColor, OverwriteColor, OverwriteBox);
+	if ((OverwriteBox.X == 0 && OverwriteBox.Y == 0 && OverwriteBox.Width == 0 && OverwriteBox.Height == 0))
+		LCD_DrawRectangle(_MainLCD, OverwriteColor, OverwriteColor, OverwriteBox);
 
 	_MainLCD.Set_Text_colour(FrontColor);
 	_MainLCD.Set_Text_Back_colour(BackColor);
@@ -874,7 +906,7 @@ void LCD_PrintText(LCDWIKI_KBV _MainLCD, uint16_t FrontColor, uint16_t BackColor
 	_MainLCD.Print_String(InputText, X, Y);
 }
 
-void LCD_PrintTextWithinBounds(LCDWIKI_KBV _MainLCD, uint16_t FrontColor, uint16_t BackColor, String InputText, RECT Bounds, int Margin, uint16_t OverwriteColor = C_BLACK, bool DoOverwriteColor = true, bool FitTextSize = true, uint8_t TextSize = 1 )
+void LCD_PrintTextWithinBounds(LCDWIKI_KBV _MainLCD, uint16_t FrontColor, uint16_t BackColor, String InputText, RECT Bounds, uint8_t Margin, uint16_t OverwriteColor = C_BLACK, bool DoOverwriteColor = true, bool FitTextSize = true, uint8_t TextSize = 1 )
 {
 	if (DoOverwriteColor)
 		LCD_DrawRectangle(_MainLCD, OverwriteColor, OverwriteColor, Bounds);
@@ -884,15 +916,15 @@ void LCD_PrintTextWithinBounds(LCDWIKI_KBV _MainLCD, uint16_t FrontColor, uint16
 	uint8_t NewFontSize = TextSize;
 	if (FitTextSize)
 	{
-		NewFontSize = GetFontSizeFitWithinBounds(Bounds, Margin,InputText,20,1);
+		NewFontSize = FitFontWithingBounds(Bounds, Margin,InputText.length(),20,1);
 	}
 	_MainLCD.Set_Text_Size(NewFontSize);
-	_MainLCD.Print_String(InputText, Bounds.X + CenterTextAtHorisontal((Bounds.Width - Bounds.X) / 2, NewFontSize, InputText), Bounds.Y + CenterTextAtVertical((Bounds.Height - Bounds.Y) / 2, NewFontSize, InputText));
+	_MainLCD.Print_String(InputText, Bounds.X + CenterTextAtHorisontal((Bounds.Width - Bounds.X) / 2, NewFontSize, InputText.length()), Bounds.Y + CenterTextAtVertical((Bounds.Height - Bounds.Y) / 2, NewFontSize, InputText.length()));
 }
 
 void LCD_PrintMultilineTextWithinBounds(LCDWIKI_KBV _MainLCD, String SplitText, RECT Bounds, uint8_t YValAdd, uint8_t FontSize, uint16_t PenColor, uint16_t FillColor)
 {
-	String PrintString = "";
+	String PrintString;
 	int YVal = 0;
 	bool NoMoreSpace = false;
 	for (int i = 0; i < SplitText.length(); i++)

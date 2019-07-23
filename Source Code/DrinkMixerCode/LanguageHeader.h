@@ -34,8 +34,8 @@
 #define SettingStartupOfPumpsDescString "Opstart alle pumper, saa der er lidt vaeske i systemet"
 #define SettingsPurgeSystem "Toem System"
 #define SettingsPurgeDescSystem "Toem systemet for vaeske"
-#define SettingsTestPumps1by1 "Test pumperne 1 efter 1"
-#define SettingsTestPumps1by1 "Test pumperne 1 efter 1"
+#define SettingsTestPumps1by1String "Test pumperne 1 efter 1"
+#define SettingsTestPumps1by1DescString "Test pumperne 1 efter 1"
 #endif
 
 #endif

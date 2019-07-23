@@ -4,7 +4,6 @@
 #include "CategoryData.h"
 #include "BottleData.h"
 #include "StructsHeader.h"
-#include "LanguageHeader.h"
 
 // Physical Settings
 //		Pin definitions on the arduino as well as some misc data
@@ -27,7 +26,8 @@
 //		Lang_English Lang_Danish
 //			Warning: You will still need to change the language of the recipelist youself!
 
-#define SelectedLanguage Lang_English
+#define SelectedLanguage Lang_Danish
+#include "LanguageHeader.h"
 
 // Pump Settings
 //		PumpPin			=	Pin number on the arduino
@@ -71,5 +71,7 @@ const MixRecipe RecipeList[] PROGMEM = {
 
 const uint16_t GlassSizes[] PROGMEM = { 250, 150, 50 };
 char* const GlassSizesName[] PROGMEM = { "Stor", "Medium", "Lille" };
+
+#include "OptimizationHeader.h"
 
 #endif

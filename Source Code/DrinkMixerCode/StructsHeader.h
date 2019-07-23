@@ -7,12 +7,13 @@ struct Liquid
 {
 	char TankContenName[20];
 	double FizzleFactor;
+	uint8_t ID;
 };
 
 struct LiquidType
 {
 	Liquid SelectedLiquid;
-	uint16_t SelectedLiquidPart;
+	uint8_t SelectedLiquidPart;
 };
 
 struct CategoryItem
@@ -28,7 +29,7 @@ struct MixRecipe
 	uint8_t TankUsageCount;
 	bool RunAtSameTime;
 	CategoryItem Category;
-	char Description[256];
+	char Description[96];
 };
 
 struct RECT
